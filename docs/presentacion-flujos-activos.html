@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestor de Crédito — Flujos activos del sistema</title>
+<meta name="description" content="De la validación de riesgo al cobro de cuotas: visión de negocio y arquitectura técnica del Gestor de Crédito.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --dark: #10182B;
+    --dark-2: #1B2740;
+    --dark-border: #2A3752;
+    --light: #FBFBF8;
+    --card: #FFFFFF;
+    --card-border: #E4E7EC;
+    --text-dark: #17202E;
+    --text-muted: #55606E;
+    --text-light: #F5F6F3;
+    --text-light-muted: #B7C0CC;
+    --blue: #1E4FB8;
+    --blue-bright: #2F6FED;
+    --blue-tint: #EAF1FE;
+    --gold: #8A6A1E;
+    --gold-bright: #C9962B;
+    --gold-tint: #FDF1E1;
+    --green: #166534;
+    --green-bright: #1F9D55;
+    --green-tint: #E7F6ED;
+    --gray-tint: #EEF0F2;
+    --gray-text: #374151;
+    --radius: 16px;
+    --radius-lg: 20px;
+    --max-w: 1180px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', Arial, sans-serif;
+    color: var(--text-dark);
+    background: var(--light);
+    line-height: 1.5;
+  }
+  .wrap { max-width: var(--max-w); margin: 0 auto; padding: 0 24px; }
+  code, .mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+
+  /* Nav */
+  nav.topnav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(16, 24, 43, 0.96);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--dark-border);
+  }
+  nav.topnav .wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 14px; padding-bottom: 14px; gap: 16px;
+  }
+  nav.topnav .brand { color: var(--text-light); font-weight: 600; font-size: 18px; white-space: nowrap; }
+  nav.topnav ul {
+    list-style: none; display: flex; gap: 4px; margin: 0; padding: 0;
+    flex-wrap: wrap; justify-content: flex-end;
+  }
+  nav.topnav a {
+    color: var(--text-light-muted); text-decoration: none; font-size: 14px;
+    padding: 8px 12px; border-radius: 8px; transition: background 0.15s, color 0.15s;
+  }
+  nav.topnav a:hover { background: var(--dark-2); color: var(--text-light); }
+
+  /* Hero */
+  .hero {
+    background: radial-gradient(circle at 80% 15%, #1B2740 0%, #10182B 55%);
+    color: var(--text-light);
+    padding: 96px 0 80px;
+  }
+  .eyebrow {
+    display: inline-block; background: #2A2110; color: #E8C568;
+    font-size: 13px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 8px 18px; border-radius: 20px; margin-bottom: 28px;
+  }
+  .eyebrow.on-light { background: var(--blue-tint); color: var(--blue); }
+  .eyebrow.gold-on-light { background: var(--gold-tint); color: var(--gold); }
+  .hero h1 { font-size: clamp(36px, 6vw, 68px); font-weight: 700; line-height: 1.1; margin: 0 0 24px; max-width: 900px; }
+  .hero p.lead { font-size: clamp(18px, 2.4vw, 24px); color: var(--text-light-muted); max-width: 760px; margin: 0 0 36px; }
+  .hero .meta { font-size: 14px; color: #93A0B3; display: flex; gap: 24px; flex-wrap: wrap; }
+
+  section { padding: 88px 0; }
+  section.alt { background: var(--card); border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border); }
+  section.dark {
+    background: radial-gradient(circle at 20% 80%, #1B2740 0%, #10182B 55%);
+    color: var(--text-light);
+  }
+  section.dark h2 { color: var(--text-light); }
+  section.dark p { color: var(--text-light-muted); }
+
+  h2.section-title { font-size: clamp(28px, 4vw, 44px); font-weight: 700; margin: 0 0 16px; }
+  p.section-sub { font-size: 18px; color: var(--text-muted); max-width: 780px; margin: 0 0 40px; }
+  section.dark p.section-sub { color: var(--text-light-muted); }
+
+  .grid { display: grid; gap: 20px; }
+  .grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px) {
+    .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 620px) {
+    .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: var(--radius);
+    padding: 28px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .card.on-dark { background: var(--dark-2); border-color: var(--dark-border); }
+  .card.on-dark h3 { color: var(--text-light); }
+  .card.on-dark p, .card.on-dark li { color: var(--text-light-muted); }
+  .card h3 { font-size: 22px; font-weight: 600; margin: 0; }
+  .card p { font-size: 16px; color: var(--text-muted); margin: 0; line-height: 1.5; }
+  .card ul { margin: 0; padding-left: 20px; font-size: 16px; color: var(--text-muted); line-height: 1.7; }
+  .card ul li { margin-bottom: 4px; }
+
+  .icon-badge {
+    width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .icon-badge svg { width: 24px; height: 24px; }
+
+  .pill {
+    display: inline-block; font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; padding: 6px 14px; border-radius: 20px; width: fit-content;
+  }
+  .pill.blue { background: var(--blue-tint); color: var(--blue); }
+  .pill.gold { background: var(--gold-tint); color: var(--gold); }
+  .pill.green { background: var(--green-tint); color: var(--green); }
+  .pill.gray { background: var(--gray-tint); color: var(--gray-text); }
+
+  /* Flow pipeline */
+  .pipeline {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  }
+  .pipeline .step {
+    flex: 1 1 160px; background: var(--card); border: 1px solid var(--card-border);
+    border-radius: 14px; padding: 20px; min-width: 140px;
+  }
+  .pipeline .step h4 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  .pipeline .step p { margin: 0; font-size: 14px; color: var(--text-muted); }
+  .pipeline .arrow { flex: 0 0 auto; color: var(--blue-bright); font-size: 28px; font-weight: 700; }
+  .pipeline.secondary .step { background: var(--gold-tint); border-color: #F0D9AE; }
+  .pipeline.secondary .step h4 { color: #17202E; }
+  .pipeline.secondary .step p { color: #7A5A1E; }
+  .pipeline.secondary .arrow { color: var(--gold-bright); }
+  @media (max-width: 700px) {
+    .pipeline { flex-direction: column; align-items: stretch; }
+    .pipeline .arrow { align-self: center; transform: rotate(90deg); }
+  }
+  .footnote { font-size: 15px; color: var(--text-muted); margin: 16px 0 0; }
+
+  /* Status badges row (bandeja asesor) */
+  .status-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .status-chip {
+    flex: 1 1 160px; border-radius: 14px; padding: 16px 18px;
+  }
+  .status-chip strong { display: block; font-size: 17px; margin-bottom: 2px; }
+  .status-chip span { font-size: 14px; }
+
+  /* Stats */
+  .stat { text-align: left; }
+  .stat .num { font-size: clamp(40px, 6vw, 64px); font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .stat .label { font-size: 15px; color: var(--text-muted); }
+
+  /* Entity list */
+  .entity-name { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+  .entity-desc { font-size: 15px; color: var(--text-muted); margin: 0; }
+
+  /* Divider sections */
+  .divider h2 { font-size: clamp(30px, 5vw, 52px); margin: 0 0 20px; max-width: 820px; }
+  .divider p { font-size: 20px; max-width: 700px; }
+
+  footer {
+    background: var(--dark); color: var(--text-light-muted); padding: 40px 0; font-size: 14px;
+    text-align: center;
+  }
+  footer a { color: #7FB0FF; }
+
+  .toc-jump { scroll-margin-top: 76px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="wrap">
+    <span class="brand">Gestor de Crédito</span>
+    <ul>
+      <li><a href="#inicio">Inicio</a></li>
+      <li><a href="#resumen">Resumen</a></li>
+      <li><a href="#flujo">El flujo</a></li>
+      <li><a href="#seguimiento">Seguimiento</a></li>
+      <li><a href="#cobranza">Cobranza</a></li>
+      <li><a href="#metricas">Métricas</a></li>
+      <li><a href="#tecnico">Técnico</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header class="hero toc-jump" id="inicio">
+  <div class="wrap">
+    <span class="eyebrow">Gestor de Crédito</span>
+    <h1>Flujos activos del sistema</h1>
+    <p class="lead">De la validación de riesgo al cobro de cuotas: visión de negocio y arquitectura técnica en un mismo recorrido.</p>
+    <div class="meta">
+      <span>Especificaciones 001–005 · Onboarding, Seguimiento, Pagos y Cronograma</span>
+    </div>
+  </div>
+</header>
+
+<section id="resumen" class="toc-jump">
+  <div class="wrap">
+    <h2 class="section-title">¿Qué es el Gestor de Crédito?</h2>
+    <p class="section-sub" style="font-size:20px; color:var(--text-dark); max-width:900px;">Una aplicación web que acompaña a una entidad financiera desde la captación del cliente hasta el desembolso del crédito y el cobro de sus cuotas: un solo sistema para todo el ciclo de vida del crédito.</p>
+    <div class="grid cols-3">
+      <div class="card">
+        <div class="icon-badge" style="background:var(--blue-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+        </div>
+        <h3>Objetivo</h3>
+        <p>Agilizar la evaluación crediticia y la generación de cotizaciones, de punta a punta.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:var(--gold-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
+        </div>
+        <h3>Alcance actual</h3>
+        <p>5 especificaciones entregadas: gestión de créditos, seguimiento avanzado, pagos con rol Cajero, cronograma con comprobante de pago, y precarga de datos en Onboarding.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:var(--green-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+        </div>
+        <h3>Cómo se construyó</h3>
+        <p>Desarrollo dirigido por especificación: cada pantalla y regla de negocio nace de un requisito escrito y validado antes de programarse.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="section-title">Cuatro roles, un mismo flujo</h2>
+    <p class="section-sub">El sistema no usa usuario ni contraseña: cada sesión elige un rol, que determina qué pantallas y acciones están disponibles.</p>
+    <div class="grid cols-4">
+      <div class="card">
+        <div class="icon-badge" style="background:var(--blue-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        </div>
+        <h3 style="font-size:20px">Administrador</h3>
+        <p>Configura Productos, Requisitos, Tipos de Documento y Usuarios.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:var(--gold-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3 style="font-size:20px">Asesor</h3>
+        <p>Capta al cliente, simula el crédito, completa el onboarding y hace seguimiento.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:var(--green-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3 style="font-size:20px">Aprobador</h3>
+        <p>Revisa los Requisitos adjuntos y decide: Aprobado, Observado o Rechazado.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:#FDF1E1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#E0932B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+        </div>
+        <h3 style="font-size:20px">Cajero</h3>
+        <p>Busca al cliente, revisa el cronograma y registra el pago con Número de Operación.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="dark divider">
+  <div class="wrap">
+    <span class="eyebrow">Parte 1</span>
+    <h2>El flujo de negocio, de extremo a extremo</h2>
+    <p>Cómo viaja un cliente desde la validación de riesgo hasta el cobro de su última cuota.</p>
+  </div>
+</section>
+
+<section id="flujo" class="toc-jump">
+  <div class="wrap">
+    <h2 class="section-title">El viaje del crédito</h2>
+    <div class="pipeline">
+      <div class="step"><h4>1. Validación</h4><p>Riesgo (Mock)</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4>2. Simulación</h4><p>Cronograma</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4>3. Onboarding</h4><p>Cliente y cuenta</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4>4. Aprobación *</h4><p>Condicional</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4>5. Desembolso</h4><p>Cierre y PDF</p></div>
+    </div>
+    <p class="footnote">* Condicional: con Requisitos pasa por Declaración de Inversión (si aplica) → Requisitos → decisión del Aprobador. Sin Requisitos, salta directo a Desembolso (Fast-Track).</p>
+    <div class="pipeline secondary" style="margin-top:32px">
+      <div class="step"><h4>5. Desembolso</h4><p>Crédito vigente</p></div>
+      <div class="arrow">→</div>
+      <div class="step" style="flex-grow:2"><h4>6. Cobro de cuotas — Cajero</h4><p>Cronograma visual + N° de Operación + evidencia, hasta quedar "Cancelado"</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="section-title">1–2. Validación de riesgo y Simulación</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <span class="pill blue">Pantalla 1</span>
+        <h3>Validación de riesgo</h3>
+        <ul>
+          <li>El Asesor ingresa Tipo y Número de Documento</li>
+          <li>El sistema genera un valor Mock aleatorio del 1 al 5</li>
+          <li>1, 2 o 3: habilita continuar a la simulación</li>
+          <li>4 o 5: rechaza, pero permite reintentar de inmediato</li>
+          <li>No permite dos prospectos activos para el mismo documento</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="pill blue">Pantalla 2</span>
+        <h3>Simulación de crédito</h3>
+        <ul>
+          <li>Selecciona un Producto (define los rangos permitidos)</li>
+          <li>Monto, tasa y plazo limitados a ese rango</li>
+          <li>Cronograma con interés sobre saldo insoluto (decreciente)</li>
+          <li>Se guarda solo al presionar Aceptar</li>
+          <li>PDF del cronograma descargable</li>
+        </ul>
+      </div>
+    </div>
+    <p class="footnote" style="color:var(--gold); font-weight:600">Meta de negocio: cotización completa en menos de 3 minutos.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="section-title">3. Onboarding del cliente</h2>
+    <div class="grid cols-3">
+      <div class="card">
+        <div class="icon-badge" style="background:var(--blue-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 22V12h6v10"/></svg>
+        </div>
+        <h3>Datos del cliente</h3>
+        <p>Nombres, Apellidos y Dirección. Si el cliente ya tuvo un crédito anterior, estos datos se precargan automáticamente (spec 005).</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:var(--gold-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+        </div>
+        <h3>Cuenta de desembolso</h3>
+        <p>Interna: cuenta ya registrada del cliente o nueva (N° cuenta + moneda). Externa: Banco + CCI de 20 dígitos.</p>
+      </div>
+      <div class="card">
+        <div class="icon-badge" style="background:var(--green-tint)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
+        </div>
+        <h3>Declaración de Inversión</h3>
+        <p>Solo para productos que lo requieran. Monto a invertir (nunca mayor al solicitado) y origen de los fondos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="section-title">4. Requisitos y Aprobación: la rama condicional</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <span class="pill gold" style="width:auto">Producto con Requisitos</span>
+        <h3>Camino con Aprobador</h3>
+        <ul>
+          <li>El Asesor adjunta un PDF por cada Requisito del Producto</li>
+          <li>El Aprobador revisa y decide: Aprobado, Observado o Rechazado</li>
+          <li>Observado o Rechazado exigen un comentario (hasta 1000 caracteres)</li>
+          <li>Observado: vuelve a la bandeja del Asesor con el comentario visible en tooltip</li>
+          <li>Rechazado: el proceso se cierra, sin llegar a Desembolso</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="pill green" style="width:auto">Producto sin Requisitos</span>
+        <h3>Fast-Track</h3>
+        <ul>
+          <li>El sistema omite por completo Requisitos y Aprobación</li>
+          <li>Pasa directo al estado Desembolso</li>
+          <li>El documento de aprobación se genera automáticamente</li>
+          <li>Sin intervención manual de un Aprobador</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="section-title">5. Desembolso y cierre del proceso</h2>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Qué ocurre en esta fase</h3>
+        <ul>
+          <li>El Asesor genera el PDF de Aprobación Final</li>
+          <li>Incluye la Cuenta de Desembolso y los datos del cronograma aceptado</li>
+          <li>Al cerrar el proceso, el prospecto pasa a Finalizado</li>
+          <li>El Número de Documento queda libre para un futuro crédito</li>
+          <li>Queda disponible para consulta en el Historial</li>
+        </ul>
+      </div>
+      <div class="card on-dark">
+        <div class="icon-badge" style="background:rgba(127,176,255,0.15)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7FB0FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+        </div>
+        <h3>PDF de Aprobación Final</h3>
+        <p>El documento que el Asesor entrega al cliente por canales externos: cronograma aceptado + cuenta de desembolso, en un solo archivo descargable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="seguimiento" class="alt toc-jump">
+  <div class="wrap">
+    <h2 class="section-title">Seguimiento: la bandeja del Asesor</h2>
+    <p class="section-sub">Un solo lugar para retomar cualquier prospecto activo exactamente donde quedó, sin repetir pasos.</p>
+    <div class="status-row">
+      <div class="status-chip" style="background:var(--gray-tint)"><strong style="color:#374151">Bloqueado</strong><span style="color:#6B7280">Rechazado, cierre de solo lectura</span></div>
+      <div class="status-chip" style="background:var(--blue-tint)"><strong style="color:var(--blue)">En proceso</strong><span style="color:#3D5A99">Continúa en el paso donde quedó</span></div>
+      <div class="status-chip" style="background:var(--gold-tint)"><strong style="color:var(--gold)">Aprobación</strong><span style="color:#8A6A2E">Solo lectura, en revisión</span></div>
+      <div class="status-chip" style="background:#FCE8E8"><strong style="color:#9F2D2D">Observado</strong><span style="color:#B23A3A">Vuelve a Onboarding a corregir</span></div>
+      <div class="status-chip" style="background:var(--green-tint)"><strong style="color:var(--green)">Desembolsado</strong><span style="color:#1F7A45">Proceso finalizado con éxito</span></div>
+    </div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Comentario del Aprobador visible</h3>
+        <p>Al Observar o Rechazar, el Aprobador deja un comentario obligatorio que el Asesor ve en un tooltip sobre el estado del prospecto.</p>
+      </div>
+      <div class="card">
+        <h3>Edición desde la bandeja</h3>
+        <p>El Asesor corrige nombre, dirección o cuenta bancaria en cualquier estado activo, salvo mientras está en Aprobación.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="cobranza" class="toc-jump">
+  <div class="wrap">
+    <h2 class="section-title">Cobro de cuotas: la bandeja del Cajero</h2>
+    <p class="section-sub">Rol de solo lectura, con una única acción de escritura: registrar el pago de la cuota vigente.</p>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Cronograma con estado por cuota</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap">
+          <span class="pill green" style="width:auto">Pagada</span>
+          <span class="pill gold" style="width:auto">Actual</span>
+          <span class="pill gray" style="width:auto">Futura</span>
+        </div>
+        <p>Un vistazo basta para saber en qué cuota está el cliente y un resumen indica, por ejemplo, "3 de 12 cuotas pagadas".</p>
+      </div>
+      <div class="card on-dark">
+        <h3>Registro del pago</h3>
+        <ul>
+          <li>Número de Operación: obligatorio, evidencia del pago</li>
+          <li>Evidencia adjunta: opcional, imagen o PDF hasta 5 MB</li>
+          <li>No permite pagar una cuota ya pagada</li>
+          <li>Al pagar la última cuota, el crédito queda Cancelado</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="metricas" class="alt toc-jump">
+  <div class="wrap">
+    <h2 class="section-title">El proyecto en números</h2>
+    <div class="grid cols-3">
+      <div class="card stat"><div class="num" style="color:var(--blue)">5</div><div class="label">Especificaciones entregadas</div></div>
+      <div class="card stat"><div class="num" style="color:var(--gold)">19</div><div class="label">Historias de usuario</div></div>
+      <div class="card stat"><div class="num" style="color:var(--green)">80+</div><div class="label">Requisitos funcionales</div></div>
+      <div class="card stat"><div class="num" style="color:var(--blue)">4</div><div class="label">Roles de usuario</div></div>
+      <div class="card stat"><div class="num" style="color:var(--gold)">17</div><div class="label">Pantallas activas</div></div>
+      <div class="card stat"><div class="num" style="color:var(--green)">23</div><div class="label">Pruebas automatizadas (backend)</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="dark divider">
+  <div class="wrap">
+    <span class="eyebrow">Parte 2</span>
+    <h2>Cómo está construido</h2>
+    <p>La arquitectura y las decisiones técnicas detrás del flujo de negocio.</p>
+  </div>
+</section>
+
+<section id="tecnico" class="toc-jump">
+  <div class="wrap">
+    <h2 class="section-title">Arquitectura y stack tecnológico</h2>
+    <div class="pipeline" style="margin-bottom:40px">
+      <div class="step"><h4>Frontend</h4><p>Angular 19 + TypeScript + Bootstrap 5</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4 class="mono" style="font-size:17px">/api/*</h4><p>.NET 10 Minimal APIs (C# 13)</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4>EF Core</h4><p>Code-First, migraciones versionadas</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><h4>SQL Server</h4><p>dbGestorCredito</p></div>
+    </div>
+    <div class="grid cols-3">
+      <div class="card on-dark">
+        <h3>Sin autenticación compleja</h3>
+        <p>Selector de rol por sesión, sin usuario ni contraseña, conforme al alcance del MVP.</p>
+      </div>
+      <div class="card on-dark">
+        <h3>Conceptos derivados</h3>
+        <p>"Crédito" y su estado se calculan en lectura desde Prospecto + Cuotas; sin tablas nuevas para datos redundantes.</p>
+      </div>
+      <div class="card on-dark">
+        <h3>Patrones reutilizados</h3>
+        <p>Subida de archivos y cálculo de estado comparten el mismo patrón entre Requisitos, Pagos y Cronograma.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="section-title">Modelo de datos clave</h2>
+    <div class="grid cols-3">
+      <div class="card"><p class="entity-name mono" style="color:var(--blue)">Prospecto</p><p class="entity-desc">Cliente en proceso: datos, estado y documento</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--blue)">Simulación</p><p class="entity-desc">Monto, tasa, plazo y cronograma aceptado</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--blue)">Cuota</p><p class="entity-desc">Pago, N° de Operación y evidencia adjunta</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--gold)">Producto</p><p class="entity-desc">Rangos, requisitos y declaración de inversión</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--gold)">Requisito</p><p class="entity-desc">Documento exigido por Producto</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--gold)">Usuario</p><p class="entity-desc">Persona que opera el sistema, con rol asignado</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--green)">DocumentoAdjunto</p><p class="entity-desc">PDF cargado por el Asesor para un Requisito</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--green)">CuentaBancariaInterna</p><p class="entity-desc">Cuentas propias del cliente, reutilizables</p></div>
+      <div class="card"><p class="entity-name mono" style="color:var(--green)">DeclaracionInversion</p><p class="entity-desc">Monto a invertir y origen de los fondos</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="dark" id="cierre">
+  <div class="wrap">
+    <h2 style="font-size:clamp(28px,5vw,44px); max-width:820px; margin:0 0 20px">Un mismo sistema, todo el ciclo de vida del crédito</h2>
+    <p style="font-size:19px; max-width:700px; margin:0 0 32px">De la validación de riesgo al cobro de la última cuota, en cinco especificaciones construidas y verificadas de punta a punta.</p>
+    <div class="card on-dark" style="max-width:640px">
+      <h3 style="font-size:19px">Próximos pasos posibles</h3>
+      <p style="font-size:16px">Notificaciones automáticas, pagos parciales o fuera de orden, y reversión de un pago registrado por error.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">Gestor de Crédito — Documento generado a partir de las especificaciones 001–005 del proyecto</div>
+</footer>
+
+</body>
+</html>
