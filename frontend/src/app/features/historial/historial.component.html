@@ -1,0 +1,50 @@
+<h1 class="h4 mb-4">Créditos del Cliente</h1>
+
+<div class="input-group mb-4" style="max-width: 400px;">
+  <input class="form-control" [(ngModel)]="numeroDocumento" placeholder="Número de Documento" />
+  <button class="btn btn-primary" (click)="buscar()">Buscar</button>
+</div>
+
+@if (buscado()) {
+  @for (cliente of resultados(); track cliente.numeroDocumento) {
+    <h2 class="h6">{{ cliente.nombreCompleto }} — {{ cliente.tipoDocumento }} {{ cliente.numeroDocumento }}</h2>
+    <table class="table table-sm mb-4">
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Monto Solicitado</th>
+          <th>Cuota Actual</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (credito of cliente.creditos; track credito.prospectoId) {
+          <tr>
+            <td>{{ credito.productoNombre }}</td>
+            <td>{{ credito.montoSolicitado | monedaPe }}</td>
+            <td>
+              @if (credito.cuotaActual) {
+                N° {{ credito.cuotaActual.numero }} — {{ credito.cuotaActual.fechaPago | fechaPe }}
+              } @else {
+                —
+              }
+            </td>
+            <td>
+              <span
+                class="badge"
+                [class.text-bg-primary]="credito.estadoCredito === 'EnProceso'"
+                [class.text-bg-warning]="credito.estadoCredito === 'Pendiente'"
+                [class.text-bg-success]="credito.estadoCredito === 'Cancelado'"
+              >
+                {{ credito.estadoCredito === 'EnProceso' ? 'En proceso'
+                   : credito.estadoCredito === 'Pendiente' ? 'Pendiente' : 'Cancelado' }}
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  } @empty {
+    <p class="text-muted">No hay créditos para este Número de Documento.</p>
+  }
+}

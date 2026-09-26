@@ -1,0 +1,40 @@
+<h1 class="h4 mb-4">Pantalla 1 — Validación Inicial</h1>
+
+<div class="card" style="max-width: 500px;">
+  <div class="card-body">
+    <div class="mb-3">
+      <label class="form-label">Tipo de Documento</label>
+      <select class="form-select" [(ngModel)]="tipoDocumentoId">
+        <option [ngValue]="null">Seleccione...</option>
+        @for (t of tiposDocumento(); track t.id) {
+          <option [ngValue]="t.id">{{ t.nombre }}</option>
+        }
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Número de Documento</label>
+      <input class="form-control" [(ngModel)]="numeroDocumento" />
+    </div>
+    <button class="btn btn-primary" (click)="validar()" [disabled]="cargando()">
+      Buscar / Validar
+    </button>
+  </div>
+</div>
+
+@if (mensajeError(); as msg) {
+  <div class="alert alert-danger mt-3" style="max-width: 500px;">{{ msg }}</div>
+}
+
+@if (resultado(); as r) {
+  @if (!r.aprobado) {
+    <div class="alert alert-danger mt-3" style="max-width: 500px;">
+      Riesgo no aprobado (resultado {{ r.resultadoMock }}). Este prospecto no puede continuar.
+      Puedes intentar nuevamente con el mismo documento.
+    </div>
+  } @else {
+    <div class="alert alert-success mt-3 d-flex justify-content-between align-items-center" style="max-width: 500px;">
+      <span>Riesgo aprobado (resultado {{ r.resultadoMock }}).</span>
+      <button class="btn btn-success btn-sm" (click)="continuar()">Siguiente</button>
+    </div>
+  }
+}

@@ -1,0 +1,63 @@
+<app-encabezado-cliente [prospecto]="prospecto()" />
+
+<h1 class="h4 mb-4">Pantalla 4 — Requisitos</h1>
+
+@if (prospecto(); as p) {
+  @if (p.productoRequiereRequisitos) {
+    @if (mensajeError(); as msg) {
+      <div class="alert alert-danger" style="max-width: 600px;">{{ msg }}</div>
+    }
+
+    @if (!completado()) {
+      <table class="table table-sm" style="max-width: 700px;">
+        <thead>
+          <tr>
+            <th>Requisito</th>
+            <th>Estado</th>
+            <th>Archivo (PDF)</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of requisitos(); track r.requisitoId) {
+            <tr>
+              <td>{{ r.nombre }}</td>
+              <td>
+                @if (r.adjuntado) {
+                  <span class="badge bg-success">Adjuntado</span>
+                } @else {
+                  <span class="badge bg-secondary">Pendiente</span>
+                }
+              </td>
+              <td>
+                <input type="file" accept="application/pdf" (change)="subirArchivo(r.requisitoId, $event)" />
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="text-muted">
+                Este Producto todavía no tiene Requisitos configurados; no se puede continuar.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <button class="btn btn-primary" [disabled]="!todosAdjuntados()" (click)="completar()">
+        Enviar a Aprobación
+      </button>
+    } @else {
+      <div class="alert alert-success">
+        Requisitos completados. El prospecto pasó a la fase de Aprobación.
+      </div>
+    }
+  } @else {
+    @if (completado()) {
+      <div class="alert alert-success d-flex justify-content-between align-items-center" style="max-width: 600px;">
+        <span>Este Producto no requiere Requisitos: el prospecto ya está listo para Desembolso.</span>
+        <button class="btn btn-success btn-sm" (click)="irADesembolso()">Ir a Desembolso</button>
+      </div>
+    } @else {
+      <p class="text-muted">Procesando...</p>
+    }
+  }
+}

@@ -1,0 +1,6 @@
+@if (visible && prospecto; as p) {
+  <div class="alert alert-light border d-flex justify-content-between mb-3" style="max-width: 600px;">
+    <span>{{ p.nombres }} {{ p.apellidos }}</span>
+    <span>{{ p.montoSolicitado | monedaPe }}</span>
+  </div>
+}

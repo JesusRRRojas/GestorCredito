@@ -1,0 +1,48 @@
+<a routerLink="/aprobacion" class="btn btn-sm btn-outline-secondary mb-3">&larr; Volver a la bandeja</a>
+
+<app-encabezado-cliente [prospecto]="prospecto()" />
+
+@if (prospecto(); as p) {
+  <h1 class="h4 mb-3">Prospecto: {{ p.nombres }} {{ p.apellidos }} ({{ p.numeroDocumento }})</h1>
+  <p><strong>Producto:</strong> {{ p.productoNombre }}</p>
+  <p><strong>Dirección:</strong> {{ p.direccion }}</p>
+  <p><strong>Cuenta de Desembolso:</strong> {{ descripcionCuenta(p) }}</p>
+
+  <h2 class="h6 mt-4">Requisitos adjuntos</h2>
+  <ul class="list-group mb-4" style="max-width: 500px;">
+    @for (a of archivos(); track a.id) {
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ a.requisitoNombre }} ({{ a.nombreArchivo }})
+        <a class="btn btn-sm btn-outline-primary" [href]="urlArchivo(a.requisitoId)" target="_blank">Ver PDF</a>
+      </li>
+    } @empty {
+      <li class="list-group-item text-muted">Sin archivos adjuntos.</li>
+    }
+  </ul>
+
+  @if (!decidido()) {
+    <div class="mb-3" style="max-width: 500px;">
+      <label class="form-label">Comentario (requerido para Observar o Rechazar, máx. 1000 caracteres)</label>
+      <textarea class="form-control" rows="3" maxlength="1000" [(ngModel)]="comentario"></textarea>
+    </div>
+
+    @if (mensajeError(); as msg) {
+      <div class="alert alert-danger">{{ msg }}</div>
+    }
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-success" (click)="decidir('Aprobado')">Aprobado</button>
+      <button class="btn btn-warning" [disabled]="!puedeObservarORechazar()" (click)="decidir('Observado')">
+        Observado
+      </button>
+      <button class="btn btn-danger" [disabled]="!puedeObservarORechazar()" (click)="decidir('Rechazado')">
+        Rechazado
+      </button>
+    </div>
+  } @else {
+    <div class="alert alert-success d-flex justify-content-between align-items-center">
+      <span>Decisión registrada.</span>
+      <button class="btn btn-success btn-sm" (click)="volver()">Volver a la bandeja</button>
+    </div>
+  }
+}

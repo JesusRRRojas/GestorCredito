@@ -1,0 +1,35 @@
+@if (rolActivo.rol(); as rol) {
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <span class="navbar-brand">Gestor de Crédito</span>
+      <div class="collapse navbar-collapse">
+        <ul class="navbar-nav me-auto">
+          @if (rol === 'Administrador') {
+            <li class="nav-item"><a class="nav-link" routerLink="/configuracion/tipos-documento">Tipos de Documento</a></li>
+            <li class="nav-item"><a class="nav-link" routerLink="/configuracion/productos">Productos</a></li>
+            <li class="nav-item"><a class="nav-link" routerLink="/configuracion/usuarios">Usuarios</a></li>
+            <li class="nav-item"><a class="nav-link" routerLink="/historial">Créditos del Cliente</a></li>
+          }
+          @if (rol === 'Asesor') {
+            <li class="nav-item"><a class="nav-link" routerLink="/bandeja">Bandeja</a></li>
+            <li class="nav-item"><a class="nav-link" routerLink="/validacion">Nueva Validación</a></li>
+            <li class="nav-item"><a class="nav-link" routerLink="/desembolso">Desembolso</a></li>
+            <li class="nav-item"><a class="nav-link" routerLink="/historial">Créditos del Cliente</a></li>
+          }
+          @if (rol === 'Aprobador') {
+            <li class="nav-item"><a class="nav-link" routerLink="/aprobacion">Bandeja de Aprobación</a></li>
+          }
+          @if (rol === 'Cajero') {
+            <li class="nav-item"><a class="nav-link" routerLink="/creditos-cajero">Bandeja de Créditos</a></li>
+          }
+        </ul>
+        <span class="navbar-text text-white me-3">Rol: {{ rol }}</span>
+        <button type="button" class="btn btn-outline-light btn-sm" (click)="cambiarRol()">Cambiar rol</button>
+      </div>
+    </div>
+  </nav>
+}
+
+<main class="container my-4">
+  <router-outlet />
+</main>

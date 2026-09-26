@@ -1,0 +1,39 @@
+@if (!cargando()) {
+  <app-encabezado-cliente [prospecto]="prospecto()" />
+
+  <h1 class="h4 mb-4">Declaración de Inversión</h1>
+
+  <div class="card" style="max-width: 500px;">
+    <div class="card-body">
+      <div class="mb-3">
+        <label class="form-label">Monto a Invertir (S/)</label>
+        <input class="form-control" type="number" min="0.01" step="0.01" [(ngModel)]="montoInvertir" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Origen de los Fondos</label>
+        <select class="form-select" [(ngModel)]="origenFondos">
+          @for (opcion of opcionesOrigenFondos; track opcion.valor) {
+            <option [ngValue]="opcion.valor">{{ opcion.etiqueta }}</option>
+          }
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Detalle (opcional)</label>
+        <textarea class="form-control" rows="3" maxlength="500" [(ngModel)]="detalle"></textarea>
+      </div>
+
+      @if (mensajeError(); as msg) {
+        <div class="alert alert-danger">{{ msg }}</div>
+      }
+
+      @if (!guardado()) {
+        <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+      } @else {
+        <div class="alert alert-success d-flex justify-content-between align-items-center">
+          <span>Declaración de Inversión guardada.</span>
+          <button class="btn btn-success btn-sm" (click)="continuar()">Continuar</button>
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,96 @@
+<h1 class="h4 mb-4">Configuración — Tipos de Documento y Tipos de Persona</h1>
+
+<div class="row g-4">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header">Tipos de Documento</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipos de Persona</th>
+                <th>Activo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (t of tiposDocumento(); track t.id) {
+                <tr>
+                  <td>{{ t.nombre }}</td>
+                  <td>{{ t.tipoPersonaIds.map(nombrePersona).join(', ') }}</td>
+                  <td>{{ t.activo ? 'Sí' : 'No' }}</td>
+                  <td>
+                    @if (t.activo) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="deshabilitarTipoDocumento(t.id)">
+                        Deshabilitar
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <hr />
+        <h2 class="h6">Nuevo Tipo de Documento</h2>
+        <div class="mb-2">
+          <label class="form-label">Nombre</label>
+          <input class="form-control" [(ngModel)]="nuevoNombreDocumento" placeholder="Ej. DNI" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Tipos de Persona asociados</label>
+          <select class="form-select" multiple [(ngModel)]="nuevosTipoPersonaIds">
+            @for (p of tiposPersona(); track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }}</option>
+            }
+          </select>
+        </div>
+        <button class="btn btn-primary" (click)="crearTipoDocumento()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card">
+      <div class="card-header">Tipos de Persona</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Activo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of tiposPersona(); track p.id) {
+                <tr>
+                  <td>{{ p.nombre }}</td>
+                  <td>{{ p.activo ? 'Sí' : 'No' }}</td>
+                  <td>
+                    @if (p.activo) {
+                      <button class="btn btn-sm btn-outline-danger" (click)="deshabilitarTipoPersona(p.id)">
+                        Deshabilitar
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <hr />
+        <h2 class="h6">Nuevo Tipo de Persona</h2>
+        <div class="input-group">
+          <input class="form-control" [(ngModel)]="nuevoNombrePersona" placeholder="Ej. Natural" />
+          <button class="btn btn-primary" (click)="crearTipoPersona()">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

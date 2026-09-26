@@ -1,0 +1,142 @@
+<h1 class="h4 mb-4">Bandeja del Cajero</h1>
+
+<div class="input-group mb-4" style="max-width: 500px;">
+  <input
+    class="form-control"
+    [(ngModel)]="buscar"
+    (ngModelChange)="onBuscarCambia()"
+    placeholder="Buscar por nombre del cliente o Número de Documento"
+  />
+</div>
+
+@if (mensaje(); as msg) {
+  <div class="alert alert-info" style="max-width: 500px;">{{ msg }}</div>
+}
+
+<div class="row g-3">
+  @for (cliente of clientes(); track cliente.numeroDocumento) {
+    <div class="col-md-6">
+      <div class="card h-100">
+        <div class="card-header">
+          <strong>{{ cliente.nombreCompleto }}</strong> — {{ cliente.tipoDocumento }}
+          {{ cliente.numeroDocumento }}
+        </div>
+        <ul class="list-group list-group-flush">
+          @for (credito of cliente.creditos; track credito.prospectoId) {
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div>{{ credito.productoNombre }} — {{ credito.montoSolicitado | monedaPe }}</div>
+                  <span
+                    class="badge"
+                    [class.text-bg-primary]="credito.estadoCredito === 'EnProceso'"
+                    [class.text-bg-warning]="credito.estadoCredito === 'Pendiente'"
+                    [class.text-bg-success]="credito.estadoCredito === 'Cancelado'"
+                  >
+                    {{ credito.estadoCredito === 'EnProceso' ? 'En proceso'
+                       : credito.estadoCredito === 'Pendiente' ? 'Pendiente' : 'Cancelado' }}
+                  </span>
+                </div>
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="seleccionarCredito(cliente.numeroDocumento, credito.prospectoId)"
+                >
+                  Ver crédito
+                </button>
+              </div>
+
+              @if (estaSeleccionado(cliente.numeroDocumento, credito.prospectoId)) {
+                @if (mensajeCronograma(); as msgCronograma) {
+                  <div class="alert alert-warning mt-2 mb-0">{{ msgCronograma }}</div>
+                }
+
+                @if (cronograma(); as datos) {
+                  <div class="mt-2">
+                    <div class="mb-2">
+                      <strong>{{ datos.cuotasPagadas }}</strong> de
+                      <strong>{{ datos.totalCuotas }}</strong> cuotas pagadas
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead>
+                          <tr>
+                            <th>N°</th>
+                            <th>Fecha de Pago</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>N° Operación</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (cuota of datos.cuotas; track cuota.numero) {
+                            <tr>
+                              <td>{{ cuota.numero }}</td>
+                              <td>{{ cuota.fechaPago | fechaPe }}</td>
+                              <td>{{ cuota.pagoTotal | monedaPe }}</td>
+                              <td>
+                                <span
+                                  class="badge"
+                                  [class.text-bg-success]="cuota.estadoCuota === 'Pagada'"
+                                  [class.text-bg-warning]="cuota.estadoCuota === 'Actual'"
+                                  [class.text-bg-secondary]="cuota.estadoCuota === 'Futura'"
+                                >
+                                  {{ cuota.estadoCuota === 'Pagada' ? 'Pagada'
+                                     : cuota.estadoCuota === 'Actual' ? 'Actual' : 'Futura' }}
+                                </span>
+                              </td>
+                              <td>
+                                {{ cuota.numeroOperacion ?? '—' }}
+                                @if (cuota.tieneEvidencia) {
+                                  <a
+                                    [href]="urlEvidencia(credito.prospectoId, cuota.numero)"
+                                    target="_blank"
+                                    class="ms-1"
+                                  >
+                                    Ver evidencia
+                                  </a>
+                                }
+                              </td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+
+                    @if (datos.estadoCredito === 'Pendiente') {
+                      <div class="mt-2">
+                        <label class="form-label mb-1">Número de Operación</label>
+                        <input
+                          class="form-control form-control-sm"
+                          style="max-width: 260px;"
+                          [(ngModel)]="numeroOperacion"
+                          placeholder="Ej. OP-000123"
+                        />
+                        <label class="form-label mb-1 mt-2">Evidencia (opcional)</label>
+                        <input
+                          type="file"
+                          class="form-control form-control-sm"
+                          style="max-width: 260px;"
+                          accept=".jpg,.jpeg,.png,.pdf"
+                          (change)="onArchivoSeleccionado($event)"
+                        />
+                        <button
+                          class="btn btn-sm btn-primary mt-2"
+                          [disabled]="!numeroOperacion.trim()"
+                          (click)="registrarPago(credito.prospectoId)"
+                        >
+                          Registrar Pago
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </li>
+          }
+        </ul>
+      </div>
+    </div>
+  } @empty {
+    <p class="text-muted">No se encontraron clientes.</p>
+  }
+</div>

@@ -1,0 +1,105 @@
+<app-encabezado-cliente [prospecto]="prospecto()" />
+
+<h1 class="h4 mb-4">Pantalla 3 — Onboarding (Datos Básicos)</h1>
+
+<div class="card" style="max-width: 500px;">
+  <div class="card-body">
+    <div class="mb-3">
+      <label class="form-label">Nombres</label>
+      <input class="form-control" [(ngModel)]="nombres" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Apellidos</label>
+      <input class="form-control" [(ngModel)]="apellidos" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Dirección</label>
+      <input class="form-control" [(ngModel)]="direccion" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label d-block">Cuenta de Desembolso</label>
+      <div class="form-check form-check-inline">
+        <input
+          class="form-check-input"
+          type="radio"
+          id="cuentaInterna"
+          name="tipoCuenta"
+          value="Interna"
+          [(ngModel)]="tipoCuentaDesembolso"
+        />
+        <label class="form-check-label" for="cuentaInterna">Cuenta del mismo banco (Interna)</label>
+      </div>
+      <div class="form-check form-check-inline">
+        <input
+          class="form-check-input"
+          type="radio"
+          id="cuentaExterna"
+          name="tipoCuenta"
+          value="Externa"
+          [(ngModel)]="tipoCuentaDesembolso"
+        />
+        <label class="form-check-label" for="cuentaExterna">Cuenta de otro banco (Externa)</label>
+      </div>
+    </div>
+
+    @if (tipoCuentaDesembolso === 'Interna') {
+      <div class="mb-3">
+        <label class="form-label">Cuenta Interna registrada</label>
+        <select class="form-select" [(ngModel)]="cuentaBancariaInternaId">
+          <option [ngValue]="null">Seleccione una cuenta...</option>
+          @for (cuenta of cuentasInternas(); track cuenta.id) {
+            <option [ngValue]="cuenta.id">{{ cuenta.numeroCuenta }} ({{ cuenta.moneda }})</option>
+          }
+        </select>
+
+        @if (!agregandoCuentaNueva()) {
+          <button type="button" class="btn btn-link p-0 mt-2" (click)="mostrarFormularioCuentaNueva()">
+            + Agregar cuenta nueva
+          </button>
+        } @else {
+          <div class="input-group mt-2">
+            <input
+              class="form-control"
+              placeholder="Número de Cuenta"
+              [(ngModel)]="numeroCuentaNueva"
+              name="numeroCuentaNueva"
+            />
+            <span class="input-group-text">S/ (Soles)</span>
+            <button type="button" class="btn btn-outline-primary" (click)="agregarCuentaInterna()">
+              Agregar
+            </button>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="mb-3">
+        <label class="form-label">Nombre del Banco</label>
+        <input class="form-control" [(ngModel)]="cuentaExternaBanco" name="cuentaExternaBanco" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">CCI (20 dígitos)</label>
+        <input class="form-control" [(ngModel)]="cuentaExternaCci" maxlength="20" name="cuentaExternaCci" />
+      </div>
+    }
+
+    @if (mensajeError(); as msg) {
+      <div class="alert alert-danger">{{ msg }}</div>
+    }
+
+    @if (!guardado()) {
+      <button class="btn btn-primary" (click)="guardar()">Guardar</button>
+      <button type="button" class="btn btn-outline-secondary ms-2" (click)="volverABandeja()">
+        Volver a la bandeja
+      </button>
+    } @else {
+      <div class="alert alert-success d-flex justify-content-between align-items-center">
+        <span>Onboarding guardado.</span>
+        <span>
+          <button class="btn btn-outline-secondary btn-sm me-2" (click)="volverABandeja()">Volver a la bandeja</button>
+          <button class="btn btn-success btn-sm" (click)="continuar()">Continuar</button>
+        </span>
+      </div>
+    }
+  </div>
+</div>

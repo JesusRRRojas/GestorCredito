@@ -1,0 +1,51 @@
+<h1 class="h4 mb-4">Configuración — Usuarios</h1>
+
+<div class="table-responsive mb-4">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Rol</th>
+        <th>Activo</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (u of usuarios(); track u.id) {
+        <tr>
+          <td>{{ u.nombre }}</td>
+          <td>{{ u.rol }}</td>
+          <td>{{ u.activo ? 'Sí' : 'No' }}</td>
+          <td class="text-nowrap">
+            <button class="btn btn-sm btn-outline-secondary me-1" (click)="editar(u)">Editar</button>
+            @if (u.activo) {
+              <button class="btn btn-sm btn-outline-danger" (click)="deshabilitar(u.id)">Deshabilitar</button>
+            }
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<div class="card" style="max-width: 500px;">
+  <div class="card-header">{{ editandoId ? 'Editar Usuario' : 'Nuevo Usuario' }}</div>
+  <div class="card-body">
+    <div class="mb-2">
+      <label class="form-label">Nombre</label>
+      <input class="form-control" [(ngModel)]="nombre" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Rol</label>
+      <select class="form-select" [(ngModel)]="rol">
+        @for (r of roles; track r) {
+          <option [ngValue]="r">{{ r }}</option>
+        }
+      </select>
+    </div>
+    <button class="btn btn-primary me-2" (click)="guardar()">Guardar</button>
+    @if (editandoId) {
+      <button class="btn btn-outline-secondary" (click)="cancelarEdicion()">Cancelar</button>
+    }
+  </div>
+</div>

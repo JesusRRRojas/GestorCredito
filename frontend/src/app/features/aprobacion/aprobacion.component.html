@@ -1,0 +1,28 @@
+<h1 class="h4 mb-4">Pantalla 5 — Bandeja de Aprobación</h1>
+
+<table class="table table-sm">
+  <thead>
+    <tr>
+      <th>Número de Documento</th>
+      <th>Cliente</th>
+      <th>Producto</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (p of prospectos(); track p.id) {
+      <tr>
+        <td>{{ p.numeroDocumento }}</td>
+        <td>{{ p.nombreCompleto }}</td>
+        <td>{{ p.productoNombre }}</td>
+        <td>
+          <a class="btn btn-sm btn-primary" [routerLink]="['/aprobacion', p.id]">Revisar</a>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="4" class="text-muted">No hay prospectos pendientes de aprobación.</td>
+      </tr>
+    }
+  </tbody>
+</table>

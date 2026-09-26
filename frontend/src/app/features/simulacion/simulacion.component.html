@@ -1,0 +1,113 @@
+<h1 class="h4 mb-4">Pantalla 2 — Simulación de Crédito</h1>
+
+<div class="card mb-4" style="max-width: 600px;">
+  <div class="card-body">
+    <div class="mb-3">
+      <label class="form-label">Producto</label>
+      <select class="form-select" [(ngModel)]="productoId" (ngModelChange)="seleccionarProducto()">
+        <option [ngValue]="null">Seleccione...</option>
+        @for (p of productos(); track p.id) {
+          <option [ngValue]="p.id">{{ p.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    @if (productoSeleccionado(); as producto) {
+      <div class="row g-3">
+        <div class="col-4">
+          <label class="form-label">Monto (S/)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="monto"
+            [min]="producto.montoMin"
+            [max]="producto.montoMax"
+          />
+          <div class="form-text">Entre {{ producto.montoMin | monedaPe }} y {{ producto.montoMax | monedaPe }}</div>
+        </div>
+        <div class="col-4">
+          <label class="form-label">Tasa (%)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="tasa"
+            [min]="producto.tasaMin"
+            [max]="producto.tasaMax"
+          />
+          <div class="form-text">Entre {{ producto.tasaMin }}% y {{ producto.tasaMax }}%</div>
+        </div>
+        <div class="col-4">
+          <label class="form-label">Plazo (cuotas)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="plazo"
+            [min]="producto.plazoMin"
+            [max]="producto.plazoMax"
+          />
+          <div class="form-text">Entre {{ producto.plazoMin }} y {{ producto.plazoMax }} cuotas</div>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary mt-3" (click)="simular()">Simular</button>
+    }
+  </div>
+</div>
+
+@if (mensajeError(); as msg) {
+  <div class="alert alert-danger" style="max-width: 600px;">{{ msg }}</div>
+}
+
+@if (cuotas().length > 0) {
+  <div class="table-responsive mb-3">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Fecha Pago</th>
+          <th>Saldo Inicial</th>
+          <th>Amortización</th>
+          <th>Interés</th>
+          <th>Otros</th>
+          <th>Pago Total</th>
+          <th>Saldo Final</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of cuotas(); track c.numero) {
+          <tr>
+            <td>{{ c.numero }}</td>
+            <td>{{ c.fechaPago | fechaPe }}</td>
+            <td>{{ c.saldoInicial | monedaPe }}</td>
+            <td>{{ c.amortizacion | monedaPe }}</td>
+            <td>{{ c.interes | monedaPe }}</td>
+            <td>{{ c.otros | monedaPe }}</td>
+            <td>{{ c.pagoTotal | monedaPe }}</td>
+            <td>{{ c.saldoFinal | monedaPe }}</td>
+          </tr>
+        }
+      </tbody>
+      <tfoot>
+        <tr class="table-light fw-bold">
+          <td colspan="4">Totales</td>
+          <td>{{ totales().interes | monedaPe }}</td>
+          <td>{{ totales().otros | monedaPe }}</td>
+          <td>{{ totales().pagoTotal | monedaPe }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  @if (!simulacionAceptada()) {
+    <button class="btn btn-primary" (click)="aceptar()">Aceptar</button>
+  } @else {
+    <div class="alert alert-success d-flex justify-content-between align-items-center" style="max-width: 600px;">
+      <span>Simulación aceptada.</span>
+      <div>
+        <button class="btn btn-outline-success btn-sm me-2" (click)="descargarPdf()">Descargar PDF</button>
+        <button class="btn btn-success btn-sm" (click)="continuarOnboarding()">Continuar a Onboarding</button>
+      </div>
+    </div>
+  }
+}

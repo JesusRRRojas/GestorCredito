@@ -1,0 +1,66 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 mb-0">Bandeja del Asesor</h1>
+  <a routerLink="/validacion" class="btn btn-primary btn-sm">+ Nuevo Prospecto</a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Tipo Documento</th>
+        <th>Número Documento</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (item of items(); track item.prospectoId) {
+        <tr>
+          <td>{{ item.nombreCliente ?? '(Sin datos de Onboarding)' }}</td>
+          <td>{{ item.tipoDocumento }}</td>
+          <td>{{ item.numeroDocumento }}</td>
+          <td>
+            <span
+              class="badge {{ claseBadge(item) }}"
+              [attr.title]="item.comentarioAprobador"
+              [style.cursor]="item.comentarioAprobador ? 'help' : null"
+            >
+              {{ etiquetaEstado(item) }}
+            </span>
+          </td>
+          <td class="text-nowrap">
+            @if (esNavegable(item)) {
+              <button class="btn btn-sm btn-primary me-1" (click)="continuar(item)">Continuar</button>
+            } @else {
+              <button class="btn btn-sm btn-outline-secondary me-1" (click)="alternarDetalle(item)">
+                Ver detalle
+              </button>
+            }
+            @if (esEditable(item)) {
+              <button class="btn btn-sm btn-outline-primary" (click)="editarCliente(item)">Editar cliente</button>
+            }
+          </td>
+        </tr>
+        @if (detalleExpandidoId() === item.prospectoId) {
+          <tr>
+            <td colspan="5">
+              <div class="alert alert-secondary mb-0">
+                <strong>Cliente:</strong> {{ item.nombreCliente ?? '(sin datos)' }} —
+                <strong>Documento:</strong> {{ item.tipoDocumento }} {{ item.numeroDocumento }} —
+                <strong>Estado:</strong> {{ etiquetaEstado(item) }}
+                @if (item.comentarioAprobador) {
+                  <br /><strong>Comentario del Aprobador:</strong> {{ item.comentarioAprobador }}
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      } @empty {
+        <tr>
+          <td colspan="5" class="text-muted">No hay prospectos registrados.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
